@@ -55,7 +55,8 @@ app.post('/api/login/', (req, res) => {
 // getting new refresh and access token from django
 app.post('/api/refresh/', (req, res) => {
     const refresh = req.cookies.refresh;
-    console.log('refresh', refresh)
+    // const refresh = req.signedCookies.refresh;
+    // console.log('refresh', refresh)
 
     if (refresh) {
         axios.post('http://localhost:8000/api/token/refresh/', {
@@ -79,6 +80,7 @@ app.post('/api/refresh/', (req, res) => {
 
 // logout
 app.get('/api/logout/', (req, res)=> {
+    console.log(req.cookies.refresh);
    res.clearCookie('refresh');
 //    res.clearCookie('access');
    res.status(200).send('succesfully logout');

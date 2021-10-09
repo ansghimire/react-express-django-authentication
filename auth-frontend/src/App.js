@@ -1,51 +1,71 @@
 import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
+import { BrowserRouter as Router, Route } from 'react-router-dom'
 import './App.css';
 import Navbar from './components/Navbar';
 import Login from './components/Login';
 import Home from './components/Home';
 import Message from './components/Message';
-// import PageNotFound from './components/PageNotFound
-// import {useHistory} from 'react-router-dom'
+import About from './components/About';
+import Logout from './components/Logout';
+
 
 
 function App() {
-
   const [access, setAccess] = useState()
   const [error, setError] = useState('')
   const [redirect, setRedirect] = useState(false)
-  // const history = useHistory();
+
 
   useEffect(() => {
-    axios.post('http://localhost:5000/api/refresh/', 
-     { withCredentials: true })
-    .then(response=> {
-      console.log(response.data);
-    })
-    .catch(error=> {
-      console.log(error)
-    })
-   
+    axios.post('http://localhost:5000/api/refresh/',
+      axios.defaults.withCredentials = true)
+      .then(response => {
+        console.log('firsttime', response.data);
+        setAccess(response.data.access)
+        setRedirect(true)
+      })
+      .catch(error => {
+        setAccess('error')
+        setRedirect(false)
+        console.log(error)
+      })
+
   }, [])
 
+  // useEffect(() => {
+  //   effect
+  //   return () => {
+  //     cleanup
+  //   }
+  // }, [input])
 
 
-  //verifying
-//   useEffect(() => {
-//     axios.post('http://127.0.0.1:8000/api/token/verify/', {
-//         token : access.access
-//     }) 
-//     .then(function(response){
-//         if(response){
-//             setRedirect(true)
-//         }
-//     })
-//     .catch(function (error) {
-//          setRedirect(false)
-//  });
- 
-//  }, [access, history])
+  useEffect(() => {
+
+    const interval = setInterval(() => {
+      if (access && access !== 'error') {
+        axios.post('http://localhost:5000/api/refresh/',
+          axios.defaults.withCredentials = true)
+          .then(response => {
+            console.log('everytime', response.data);
+            setAccess(response.data.access)
+            setRedirect(true)
+          })
+          .catch(error => {
+            setAccess('error everytime')
+            setRedirect(false)
+            console.log(error)
+          })
+      }
+      return () => {
+        clearInterval(interval)
+      }
+    }, 30000);
+
+
+  }, [access])
+
 
 
   // login
@@ -53,14 +73,12 @@ function App() {
     axios.post(`http://localhost:5000/api/login`, {
       email: userData.email,
       password: userData.password
-     
     },
-    {
-      withCredentials:true
-    })
+      { withCredentials: true })
 
       .then((response) => {
-        setAccess(response.data)
+        // console.log(response.data.access);
+        setAccess(response.data["access"])
         setRedirect(true)
         setError('')
       })
@@ -72,28 +90,48 @@ function App() {
       })
   }
 
+  // making error state empty after 3 sec
   useEffect(() => {
     setInterval(function () { setError('') }, 3000);
   }, [error])
 
-  
+
+  // logout
+  const logout_user = () => {
+    setAccess('error')
+    setRedirect(false)
+  }
+
+
+
 
   return (
     <div>
       <Router>
-        <Navbar />
-        {/* <Switch> */}
-        <Route exact path="/" component={Home} />
-        {error && <Message error={error} type="warning"/>}
-      
-        <Route path="/login" render={(props) => (
+        <Navbar status={access}/>
+
+        <Route exact path="/" render={(props) => (
           <>
-            <Login saving_data_backends={submit_to_backend} redirect={redirect}  />
+            {access && <Home access={access} />}
           </>
         )} />
-        
-        {/* <Route component={PageNotFound} /> */}
-        {/* </Switch> */}
+
+        {error && <Message error={error} type="warning" />}
+
+        <Route path="/login" render={(props) => (
+          <>
+            <Login saving_data_backends={submit_to_backend} redirect={redirect} />
+          </>
+        )} />
+
+        <Route path="/about" component={About} />
+        {/* <Route path="/logout" component={Logout}/> */}
+        <Route path="/logout" render={(props) => (
+          <>
+            <Logout log={logout_user} />
+          </>
+        )} />
+
       </Router>
     </div>
   );
